@@ -603,9 +603,17 @@ def extract_comfyui_prompt_with_wildcard_support(data: Dict, KSampler_entry: Dic
         negative_prompt = resolve_text_from_ref(negative_ref) if negative_ref else ""
 
         return positive_prompt or "", negative_prompt or ""
-    except Exception as e:
-        print(e)
+    except Exception:
         return "", ""
+
+
+def empty_comfyui_exif_data():
+    return {
+        "meta": {"Source Identifier": "ComfyUI"},
+        "pos_prompt": [],
+        "pos_prompt_raw": "",
+        "neg_prompt_raw": "",
+    }
 
 
 def get_comfyui_exif_data(img: Image):
@@ -620,9 +628,12 @@ def get_comfyui_exif_data(img: Image):
             if prompt_str:
                 prompt = prompt_str.split(":", 1)[1] if prompt_str else None
     if not prompt:
-        return {}
+        return empty_comfyui_exif_data()
 
-    data: Dict[str, Any] = json.loads(prompt)
+    try:
+        data: Dict[str, Any] = json.loads(prompt)
+    except Exception:
+        return empty_comfyui_exif_data()
     meta_key = '3'
     for i in data.keys():
         try:
@@ -633,7 +644,7 @@ def get_comfyui_exif_data(img: Image):
             pass
 
     if meta_key not in data:
-        return {}
+        return empty_comfyui_exif_data()
 
     meta = {}
     KSampler_entry = data[meta_key]["inputs"]
@@ -660,8 +671,7 @@ def get_comfyui_exif_data(img: Image):
             if isinstance(text, list):  # type:CLIPTextEncode (NSP) mode:Wildcards
                 text = data[text[0]]["inputs"]["text"]
             return text.strip()
-        except Exception as e:
-            print(e)
+        except Exception:
             return ""
 
     has_impact_wildcard = any(
@@ -701,21 +711,24 @@ def get_comfyui_exif_data(img: Image):
                         text = data[text[0]]["inputs"].get("text", "")
                     if text:
                         all_prompts.append(text.strip())
-            except Exception as e:
-                print(e)
+            except Exception:
                 pass
 
         all_prompts_str = "\nBREAK\n".join(all_prompts) if all_prompts else ""
         pos_prompt = all_prompts_str
         neg_prompt = ""
     else:
-        in_node = data[str(KSampler_entry["positive"][0])]
-        if in_node["class_type"] != "FluxGuidance":
-            pos_prompt = get_text_from_clip(KSampler_entry["positive"][0])
-        else:
-            pos_prompt = get_text_from_clip(in_node["inputs"]["conditioning"][0])
+        try:
+            in_node = data[str(KSampler_entry["positive"][0])]
+            if in_node["class_type"] != "FluxGuidance":
+                pos_prompt = get_text_from_clip(KSampler_entry["positive"][0])
+            else:
+                pos_prompt = get_text_from_clip(in_node["inputs"]["conditioning"][0])
 
-        neg_prompt = get_text_from_clip(KSampler_entry["negative"][0])
+            neg_prompt = get_text_from_clip(KSampler_entry["negative"][0])
+        except Exception:
+            pos_prompt = ""
+            neg_prompt = ""
 
     pos_prompt_arr = unique_by(parse_prompt(pos_prompt)["pos_prompt"])
 
@@ -740,9 +753,17 @@ def get_comfyui_exif_data(img: Image):
     }
 
 def comfyui_exif_data_to_str(data):
-    res = data["pos_prompt_raw"] + "\nNegative prompt: " + data["neg_prompt_raw"] + "\n"
+    pos_prompt = data.get("pos_prompt_raw", "")
+    neg_prompt = data.get("neg_prompt_raw", "")
+    if pos_prompt:
+        res = pos_prompt
+        if neg_prompt:
+            res += "\nNegative prompt: " + neg_prompt
+        res += "\n"
+    else:
+        res = ""
     meta_arr = []
-    for k,v in data["meta"].items():
+    for k,v in data.get("meta", {}).items():
         meta_arr.append(f'{k}: {v}')
     return res + ", ".join(meta_arr)
 

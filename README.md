@@ -1,3 +1,5 @@
+> **Fork support notice:** This fork is maintained exclusively for Forge Neo. It may work with other Stable Diffusion WebUI or Forge versions, but compatibility is not guaranteed.
+
 > 🌍 i18n Advisory: Some translations may be incomplete or inaccurate. Pull requests are welcome for improvements!
 
 > 🌐 Try our application online at: http://39.105.110.128:0721. This is my idle 2c2g3m cloud server without CDN.

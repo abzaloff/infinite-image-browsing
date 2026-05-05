@@ -10,7 +10,6 @@ from scripts.iib.parsers.sd_webui_stealth import SdWebUIStealthParser
 from scripts.iib.logger import logger
 from PIL import Image
 from scripts.iib.plugin import plugin_insts
-import traceback
 
 
 def parse_image_info(image_path: str) -> ImageGenerationInfo:
@@ -33,8 +32,11 @@ def parse_image_info(image_path: str) -> ImageGenerationInfo:
                 try:
                     return parser.parse(img, image_path)
                 except Exception as e:
-                    logger.error(e, stack_info=True)
-                    print(e)
-                    print(traceback.format_exc())
+                    logger.debug(
+                        "Failed to parse image metadata with %s for %s: %s",
+                        parser.__name__,
+                        image_path,
+                        e,
+                    )
                     return ImageGenerationInfo()
         raise Exception("matched parser is not found")
