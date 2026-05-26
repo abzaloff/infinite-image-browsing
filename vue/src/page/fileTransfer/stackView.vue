@@ -341,7 +341,7 @@ onMounted(() => {
                   wrapperCol: { span: 14 }
                 }">
                   <a-form-item :label="$t('gridCellWidth')">
-                    <numInput v-model="cellWidth" :max="1024" :min="64" :step="16" />
+                    <numInput v-model="cellWidth" :max="1024" :min="64" :step="8" />
                   </a-form-item>
                   <a-form-item :label="$t('sortingMethod')">
                     <search-select v-model:value="sortMethod" @click.stop :conv="sortMethodConv"

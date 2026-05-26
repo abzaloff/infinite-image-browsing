@@ -26,6 +26,11 @@
 If you would like to support more software, please refer to: [parsers](https://github.com/zanllp/sd-webui-infinite-image-browsing/tree/main/scripts/iib/parsers) or [pixiv_iib_plugin](https://github.com/zanllp/pixiv_iib_plugin)
 
 ## Key Features
+### Forge Neo UI Improvements
+- Forge Neo color alignment: the darker and lighter UI surfaces now follow Forge's `#0B0F19` and `#1F2937` palette.
+- Mouse-focused zoom in single-image fullscreen preview, so wheel zoom follows the cursor instead of always zooming from the center.
+- Improved comparison fullscreen mode with synced image zoom and pan, a thin draggable splitter with a wider hit area, and click-outside fullscreen exit.
+
 ### 🔥 Excellent Performance
 - Once caching is generated, images can be displayed in just a few milliseconds.
 - Images are displayed with thumbnails by default, with a default size of 512 pixels. You can adjust the thumbnail resolution on the global settings page.

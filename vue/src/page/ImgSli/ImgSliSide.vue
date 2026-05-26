@@ -4,7 +4,20 @@ import { computed } from 'vue'
 import { FileNodeInfo } from '@/api/files'
 import { asyncComputed } from '@vueuse/core'
 import { createImage, pick } from '@/util'
-const props = defineProps<{ side: 'left' | 'right',containerWidth: number, img: FileNodeInfo, maxEdge: 'width' | 'height', percent: number }>()
+const props = withDefaults(defineProps<{
+  side: 'left' | 'right',
+  containerWidth: number,
+  img: FileNodeInfo,
+  maxEdge: 'width' | 'height',
+  percent: number,
+  zoom?: number,
+  panX?: number,
+  panY?: number
+}>(), {
+  zoom: 1,
+  panX: 0,
+  panY: 0
+})
 const rect = asyncComputed(async () =>  pick(await createImage(toRawFileUrl(props.img)), 'width', 'height'))
 
 const style = computed(() => {
@@ -16,14 +29,15 @@ const style = computed(() => {
   } else {
     x = `calc(-50% - ${(props.percent - 50) / 100 * width + handlerWidth}px)`
   }
+  const transform = `translate(${x}, -50%) translate(${props.panX}px, ${props.panY}px) scale(${props.zoom})`
   if (props.maxEdge === 'height') {
-    return `height:100%;transform: translate(${x}, -50%)`
+    return `height:100%;transform:${transform};transform-origin:50% 50%;`
   } else {
     const r = rect.value
     if (!r) {
-      return
+      return `height:100%;transform:${transform};transform-origin:50% 50%;`
     }
-    return `height:${width / r.width * r.height}px;transform: translate(${x}, -50%)`
+    return `height:${width / r.width * r.height}px;transform:${transform};transform-origin:50% 50%;`
   }
 })
 </script>
@@ -43,6 +57,8 @@ const style = computed(() => {
   .img {
     position: absolute;
     top: 50%;
+    height: 100%;
+    will-change: transform;
   }
 
   .left {

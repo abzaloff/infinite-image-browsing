@@ -3,7 +3,7 @@ import { isImageFile } from '@/util'
 import { message } from 'ant-design-vue'
 import { useWatchDocument } from 'vue3-ts-util'
 import { useHookShareState, useEventListen } from '.'
-import { closeImageFullscreenPreview } from '@/util/imagePreviewOperation'
+import { closeImageFullscreenPreview, installImagePreviewFocusZoom } from '@/util/imagePreviewOperation'
 
 /**
  * 全屏查看
@@ -24,6 +24,9 @@ export function usePreview (spec?: { loadNext?: () => void }) {
   let waitScrollTo = null as number | null
   const onPreviewVisibleChange = (v: boolean, lv: boolean) => {
     previewing.value = v
+    if (v) {
+      setTimeout(() => installImagePreviewFocusZoom(), 0)
+    }
     if (waitScrollTo != null && !v && lv) {
       // 关闭预览时滚动过去
       scroller.value?.scrollToItem(waitScrollTo)

@@ -4,7 +4,278 @@ Promise.resolve().then(async () => {
    * This is a file generated using `yarn build`.
    * If you want to make changes, please modify `index.tpl.js` and run the command to generate it again.
    */
-  const html = `__built_html__`.replace(/\/infinite_image_browsing/g, (window.location.pathname + '/infinite_image_browsing').replace(/\/\//g, '/'))
+  const iframeRuntimePatch = `
+    <style>
+      :root {
+        --zp-black: #0B0F19 !important;
+        --zp-grey96: #1F2937 !important;
+        --zp-grey90: #1F2937 !important;
+      }
+      .img-sli .ant-drawer-footer .actions {
+        justify-content: center !important;
+        width: 100% !important;
+      }
+      .iib-compare-zoom-stage {
+        overflow: hidden !important;
+        cursor: zoom-in !important;
+        touch-action: none !important;
+      }
+      .iib-compare-zoom-stage.is-panning {
+        cursor: grabbing !important;
+      }
+      .iib-compare-zoom-content {
+        height: 100% !important;
+      }
+      .iib-compare-zoom-stage .splitpanes__splitter {
+        background: linear-gradient(to right, transparent 0 calc(50% - 0.5px), var(--zp-grey70) calc(50% - 0.5px) calc(50% + 0.5px), transparent calc(50% + 0.5px)) !important;
+        border: 0 !important;
+        box-shadow: none !important;
+        width: 16px !important;
+        min-width: 16px !important;
+        margin-left: -7.5px !important;
+        margin-right: -7.5px !important;
+        cursor: col-resize !important;
+        position: relative !important;
+        z-index: 20 !important;
+      }
+      .iib-compare-zoom-stage .splitpanes__splitter::before {
+        content: none !important;
+        display: none !important;
+      }
+      .iib-compare-zoom-stage .splitpanes__splitter::after {
+        content: none !important;
+        display: none !important;
+      }
+      .iib-compare-zoom-stage .container .img,
+      .iib-compare-zoom-stage img.img {
+        height: 100%;
+        max-width: none;
+      }
+    </style>
+    <script>
+      (() => {
+        const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+        const compareStates = new WeakMap();
+        const previewStates = new WeakMap();
+
+        const findCompareStages = () => Array.from(document.querySelectorAll('.img-sli-container > div > .default-theme, .img-sli .default-theme'))
+          .map(content => ({ content, stage: content.parentElement }))
+          .filter(({ content, stage }) => stage && !content.classList.contains('img-sli-zoom-content') && !content.closest('.iib-compare-zoom-content'));
+
+        const enhanceCompareStage = ({ content, stage }) => {
+          if (compareStates.has(stage)) return;
+          const state = { zoom: 1, panX: 0, panY: 0, panning: false, applying: false, scheduled: false, imageKey: '' };
+          compareStates.set(stage, state);
+          stage.classList.add('iib-compare-zoom-stage');
+          content.classList.add('iib-compare-zoom-content');
+
+          const lastTransforms = new WeakMap();
+          const stripRuntimeTransform = transform => (transform || '').replace(/\\s+translate\\(-?\\d+(?:\\.\\d+)?px,\\s*-?\\d+(?:\\.\\d+)?px\\)\\s+scale\\(-?\\d+(?:\\.\\d+)?\\)\\s*$/, '');
+          const getCompareImages = () => Array.from(content.querySelectorAll('.container .img, img.img'));
+          const getImageKey = () => getCompareImages().map(img => img.currentSrc || img.src || '').join('|');
+          const apply = () => {
+            state.applying = true;
+            state.imageKey = getImageKey();
+            const limitX = Math.max(0, (stage.clientWidth * state.zoom - stage.clientWidth) / 2);
+            const limitY = Math.max(0, (stage.clientHeight * state.zoom - stage.clientHeight) / 2);
+            state.panX = clamp(state.panX, -limitX, limitX);
+            state.panY = clamp(state.panY, -limitY, limitY);
+            getCompareImages().forEach(img => {
+              const baseTransform = stripRuntimeTransform(img.style.transform);
+              const nextTransform = \`\${baseTransform} translate(\${state.panX}px, \${state.panY}px) scale(\${state.zoom})\`;
+              img.style.transform = nextTransform;
+              img.style.transformOrigin = '50% 50%';
+              img.style.willChange = 'transform';
+              lastTransforms.set(img, nextTransform);
+            });
+            queueMicrotask(() => { state.applying = false; });
+          };
+          const resetForCurrentImages = () => {
+            state.zoom = 1;
+            state.panX = 0;
+            state.panY = 0;
+            apply();
+          };
+          const scheduleApply = () => {
+            if (state.zoom <= 1 || state.scheduled) return;
+            state.scheduled = true;
+            requestAnimationFrame(() => {
+              state.scheduled = false;
+              apply();
+            });
+          };
+          new MutationObserver(mutations => {
+            if (state.applying) return;
+            const imageKey = getImageKey();
+            if (imageKey && state.imageKey && imageKey !== state.imageKey) {
+              resetForCurrentImages();
+              return;
+            }
+            if (state.zoom <= 1) return;
+            if (mutations.some(mutation => mutation.target instanceof HTMLImageElement && mutation.target.style.transform !== lastTransforms.get(mutation.target))) {
+              scheduleApply();
+            }
+          }).observe(content, { subtree: true, childList: true, attributes: true, attributeFilter: ['style', 'src'] });
+          apply();
+
+          stage.addEventListener('wheel', event => {
+            if (event.target.closest && event.target.closest('.splitpanes__splitter')) return;
+            if (!event.target.closest || !event.target.closest('img.img')) return;
+            event.preventDefault();
+            const currentZoom = state.zoom;
+            const nextZoom = clamp(currentZoom * (event.deltaY < 0 ? 1.16 : 1 / 1.16), 1, 8);
+            const rect = stage.getBoundingClientRect();
+            const focusX = event.clientX - (rect.left + rect.width / 2);
+            const focusY = event.clientY - (rect.top + rect.height / 2);
+            const zoomRatio = nextZoom / currentZoom;
+            state.zoom = nextZoom;
+            if (nextZoom === 1) {
+              state.panX = 0;
+              state.panY = 0;
+            } else {
+              state.panX = focusX - (focusX - state.panX) * zoomRatio;
+              state.panY = focusY - (focusY - state.panY) * zoomRatio;
+            }
+            apply();
+          }, { passive: false });
+
+          stage.addEventListener('contextmenu', event => {
+            if (state.zoom > 1) event.preventDefault();
+          });
+
+          stage.addEventListener('mousedown', event => {
+            if (event.target.closest && event.target.closest('.splitpanes__splitter')) return;
+            if (event.button !== 2 || state.zoom <= 1) return;
+            event.preventDefault();
+            const startX = event.clientX;
+            const startY = event.clientY;
+            const startPanX = state.panX;
+            const startPanY = state.panY;
+            stage.classList.add('is-panning');
+            const onMove = moveEvent => {
+              state.panX = startPanX + moveEvent.clientX - startX;
+              state.panY = startPanY + moveEvent.clientY - startY;
+              apply();
+            };
+            const onUp = upEvent => {
+              if (upEvent.button !== 2) return;
+              stage.classList.remove('is-panning');
+              document.removeEventListener('mousemove', onMove);
+              document.removeEventListener('mouseup', onUp);
+            };
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+          });
+
+          stage.addEventListener('click', event => {
+            if (
+              event.button === 0 &&
+              document.fullscreenElement === stage &&
+              (!event.target.closest || (!event.target.closest('img.img') && !event.target.closest('.splitpanes__splitter')))
+            ) {
+              document.exitFullscreen();
+            }
+          });
+        };
+
+        const enhanceCompareStages = () => findCompareStages().forEach(enhanceCompareStage);
+
+        const getVisiblePreviewWrap = target => {
+          const wrap = target && target.closest && target.closest('.ant-image-preview-wrap');
+          return wrap && wrap.style.display !== 'none' ? wrap : null;
+        };
+
+        const getPreviewState = wrap => {
+          const img = wrap.querySelector('.ant-image-preview-img');
+          if (!img) return null;
+          let state = previewStates.get(wrap);
+          if (state && state.img === img) return state;
+          state = { img, zoom: 1, panX: 0, panY: 0 };
+          previewStates.set(wrap, state);
+          return state;
+        };
+
+        const applyPreview = (wrap, state) => {
+          const { img } = state;
+          const limitX = Math.max(0, (img.clientWidth * state.zoom - wrap.clientWidth) / 2);
+          const limitY = Math.max(0, (img.clientHeight * state.zoom - wrap.clientHeight) / 2);
+          state.panX = clamp(state.panX, -limitX, limitX);
+          state.panY = clamp(state.panY, -limitY, limitY);
+          img.style.transform = \`translate(\${state.panX}px, \${state.panY}px) scale(\${state.zoom})\`;
+          img.style.transformOrigin = '50% 50%';
+          img.style.transition = 'transform 0.06s linear';
+          img.style.cursor = state.zoom > 1 ? 'grab' : 'zoom-in';
+        };
+
+        document.addEventListener('wheel', event => {
+          const wrap = getVisiblePreviewWrap(event.target);
+          if (!wrap) return;
+          if (!event.target.closest || !event.target.closest('.ant-image-preview-img')) return;
+          const state = getPreviewState(wrap);
+          if (!state) return;
+          event.stopImmediatePropagation();
+          event.preventDefault();
+          const currentZoom = state.zoom;
+          const nextZoom = clamp(currentZoom * (event.deltaY < 0 ? 1.16 : 1 / 1.16), 1, 8);
+          const rect = wrap.getBoundingClientRect();
+          const focusX = event.clientX - (rect.left + rect.width / 2);
+          const focusY = event.clientY - (rect.top + rect.height / 2);
+          const zoomRatio = nextZoom / currentZoom;
+          state.zoom = nextZoom;
+          if (nextZoom === 1) {
+            state.panX = 0;
+            state.panY = 0;
+          } else {
+            state.panX = focusX - (focusX - state.panX) * zoomRatio;
+            state.panY = focusY - (focusY - state.panY) * zoomRatio;
+          }
+          applyPreview(wrap, state);
+        }, { passive: false, capture: true });
+
+        document.addEventListener('contextmenu', event => {
+          const wrap = getVisiblePreviewWrap(event.target);
+          const state = wrap && previewStates.get(wrap);
+          if (state && state.zoom > 1) {
+            event.stopImmediatePropagation();
+            event.preventDefault();
+          }
+        }, true);
+
+        document.addEventListener('mousedown', event => {
+          const wrap = getVisiblePreviewWrap(event.target);
+          const state = wrap && getPreviewState(wrap);
+          if (!wrap || !state || event.button !== 2 || state.zoom <= 1) return;
+          event.stopImmediatePropagation();
+          event.preventDefault();
+          const startX = event.clientX;
+          const startY = event.clientY;
+          const startPanX = state.panX;
+          const startPanY = state.panY;
+          state.img.style.cursor = 'grabbing';
+          const onMove = moveEvent => {
+            state.panX = startPanX + moveEvent.clientX - startX;
+            state.panY = startPanY + moveEvent.clientY - startY;
+            applyPreview(wrap, state);
+          };
+          const onUp = upEvent => {
+            if (upEvent.button !== 2) return;
+            state.img.style.cursor = state.zoom > 1 ? 'grab' : 'zoom-in';
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onUp);
+          };
+          document.addEventListener('mousemove', onMove);
+          document.addEventListener('mouseup', onUp);
+        }, true);
+
+        new MutationObserver(enhanceCompareStages).observe(document.documentElement, { childList: true, subtree: true });
+        document.addEventListener('DOMContentLoaded', enhanceCompareStages);
+        enhanceCompareStages();
+      })();
+    <\/script>
+  `
+  const html = `__built_html__`
+    .replace(/<\/body>/, `${iframeRuntimePatch}</body>`)
+    .replace(/\/infinite_image_browsing/g, (window.location.pathname + '/infinite_image_browsing').replace(/\/\//g, '/'))
   let containerSelector = '#infinite_image_browsing_container_wrapper'
   let shouldMaximize = localStorage.getItem('iib://disable_maximize') !== 'true'
 
