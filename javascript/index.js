@@ -8,8 +8,8 @@ Promise.resolve().then(async () => {
     <style>
       :root {
         --zp-black: #0B0F19 !important;
-        --zp-grey96: #1F2937 !important;
-        --zp-grey90: #1F2937 !important;
+        --zp-grey96: #101420 !important;
+        --zp-grey90: #101420 !important;
       }
       .img-sli .ant-drawer-footer .actions {
         justify-content: center !important;
@@ -282,8 +282,8 @@ Promise.resolve().then(async () => {
     <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Infinite Image Browsing</title>
-    <script type="module" crossorigin src="/infinite_image_browsing/fe-static/assets/index-9c173d47.js"></script>
-    <link rel="stylesheet" href="/infinite_image_browsing/fe-static/assets/index-ac52b2c6.css">
+    <script type="module" crossorigin src="/infinite_image_browsing/fe-static/assets/index-f00f8faa.js"></script>
+    <link rel="stylesheet" href="/infinite_image_browsing/fe-static/assets/index-d015feb6.css">
   </head>
 
   <body>

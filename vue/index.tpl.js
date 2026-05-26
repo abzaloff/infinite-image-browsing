@@ -8,8 +8,8 @@ Promise.resolve().then(async () => {
     <style>
       :root {
         --zp-black: #0B0F19 !important;
-        --zp-grey96: #1F2937 !important;
-        --zp-grey90: #1F2937 !important;
+        --zp-grey96: #101420 !important;
+        --zp-grey90: #101420 !important;
       }
       .img-sli .ant-drawer-footer .actions {
         justify-content: center !important;

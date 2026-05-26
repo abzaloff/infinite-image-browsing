@@ -27,7 +27,7 @@ If you would like to support more software, please refer to: [parsers](https://g
 
 ## Key Features
 ### Forge Neo UI Improvements
-- Forge Neo color alignment: the darker and lighter UI surfaces now follow Forge's `#0B0F19` and `#1F2937` palette.
+- Forge Neo color alignment: the darker and lighter UI surfaces now follow Forge's `#0B0F19` and `#101420` palette.
 - Mouse-focused zoom in single-image fullscreen preview, so wheel zoom follows the cursor instead of always zooming from the center.
 - Improved comparison fullscreen mode with synced image zoom and pan, a thin draggable splitter with a wider hit area, and click-outside fullscreen exit.
 
