@@ -84,7 +84,7 @@ const openInNewTab = () => {
 <style scoped lang="scss">
 .dragging-port-wrap {
   position: fixed;
-  bottom: 15%;
+  bottom: 2%;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
