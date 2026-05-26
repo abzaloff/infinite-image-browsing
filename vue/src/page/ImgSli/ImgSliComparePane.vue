@@ -141,6 +141,7 @@ const maxEdge = asyncComputed(async () => {
 })
 
 const canRenderCompare = computed(() => !!maxEdge.value && !!maxArea.value?.width && !!maxArea.value?.height)
+const compareMaxEdge = computed<'width' | 'height'>(() => maxEdge.value || 'height')
 </script>
 <template>
   <div
@@ -156,7 +157,7 @@ const canRenderCompare = computed(() => !!maxEdge.value && !!maxArea.value?.widt
       <pane v-if="left">
         <ImgSliSide
           side="left"
-          :max-edge="maxEdge"
+          :max-edge="compareMaxEdge"
           :container-width="width"
           :percent="percent"
           :img="left"
@@ -167,7 +168,7 @@ const canRenderCompare = computed(() => !!maxEdge.value && !!maxArea.value?.widt
       </pane>
       <pane v-if="right">
         <ImgSliSide
-          :max-edge="maxEdge"
+          :max-edge="compareMaxEdge"
           :percent="percent"
           :img="right"
           side="right"
