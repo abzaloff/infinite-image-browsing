@@ -159,8 +159,8 @@ onUnmounted(() => {
 .tips-carousel {
   padding: 6px 10px;
   border-radius: 6px;
-  background: rgba(0, 0, 0, 0.02);
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: var(--zp-secondary-background);
+  border: 1px solid var(--zp-secondary-variant-background);
 }
 
 .tip-content {
@@ -183,7 +183,7 @@ onUnmounted(() => {
   margin: 0;
   font-size: 12px;
   line-height: 18px;
-  color: rgba(0, 0, 0, 0.65);
+  color: var(--zp-primary);
   flex: 1;
 }
 
@@ -215,13 +215,4 @@ onUnmounted(() => {
   transform: translateY(-5px);
 }
 
-/* 暗色主题适配 */
-html.dark .tips-carousel {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-html.dark .tip-text {
-  color: rgba(255, 255, 255, 0.65);
-}
 </style>
